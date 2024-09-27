@@ -1,0 +1,120 @@
+#task-1 : to-do list 
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QMessageBox 
+import sqlite3
+
+db=sqlite3.connect('mytodo.db')
+c=db.cursor()
+c.execute("""CREATE TABLE if not exists todo_list(
+          list_item text)
+          """)
+db.commit()
+db.close()
+
+
+class Ui_form(object):
+    def setupUi(self, form):
+        form.setObjectName("form")
+        form.resize(640, 480)
+        self.listWidget = QtWidgets.QListWidget(form)
+        self.listWidget.setGeometry(QtCore.QRect(330, 11, 301, 451))
+        self.listWidget.setObjectName("listWidget")
+        self.label = QtWidgets.QLabel(form)
+        self.label.setGeometry(QtCore.QRect(20, 40, 171, 21))
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        self.label.setFont(font)
+        self.label.setObjectName("label")
+        self.lineEdit = QtWidgets.QLineEdit(form)
+        self.lineEdit.setGeometry(QtCore.QRect(10, 70, 311, 31))
+        self.lineEdit.setObjectName("lineEdit")
+        self.additem_pushButton = QtWidgets.QPushButton(form,clicked=lambda: self.add_it())
+        self.additem_pushButton.setGeometry(QtCore.QRect(10, 130, 131, 28))
+        self.additem_pushButton.setObjectName("additem_pushButton")
+        self.deleteitem_pushButton_2 = QtWidgets.QPushButton(form,clicked=lambda: self.delete_it())
+        self.deleteitem_pushButton_2.setGeometry(QtCore.QRect(190, 130, 121, 28))
+        self.deleteitem_pushButton_2.setObjectName("deleteitem_pushButton_2")
+        self.clear_pushButton_3 = QtWidgets.QPushButton(form,clicked=lambda: self.clear_it())
+        self.clear_pushButton_3.setGeometry(QtCore.QRect(10, 210, 121, 28))
+        self.clear_pushButton_3.setObjectName("clear_pushButton_3")
+        self.save_pushButton = QtWidgets.QPushButton(form,clicked=lambda: self.save_it())
+        self.save_pushButton.setGeometry(QtCore.QRect(190, 210, 121, 28))
+        self.save_pushButton.setObjectName("save_pushButton")
+
+        self.retranslateUi(form)
+        QtCore.QMetaObject.connectSlotsByName(form)
+
+        self.grab_all()
+
+    def grab_all(self):
+        db=sqlite3.connect('mytodo.db')
+        c=db.cursor()
+        c.execute("SELECT * FROM todo_list;")
+        records = c.fetchall()
+        db.commit()
+        db.close()
+
+        for record in records:
+            self.listWidget.addItem(str(record[0]))
+        
+
+    #adding tasks
+    def add_it(self):
+        item =  self.lineEdit.text()
+        self.listWidget.addItem(item)
+        self.lineEdit.setText("")
+
+    #deleting tasks
+    def delete_it(self):
+        clicked = self.listWidget.currentRow()
+        self.listWidget.takeItem(clicked)
+
+    #clearing the list
+    def clear_it(self):
+        self.listWidget.clear()
+
+    #saving the list in data-base
+    def save_it(self):
+        db=sqlite3.connect('mytodo.db')
+        c=db.cursor()
+
+        c.execute("DELETE FROM todo_list;",)
+        
+
+        items=[]
+        for index in range(self.listWidget.count()):
+            items.append(self.listWidget.item(index))
+
+        for item in items:
+             c.execute("INSERT INTO todo_list VALUES (:item)",
+                {
+                    'item':item.text(),
+                })
+
+        db.commit()
+        db.close() 
+
+        msg= QMessageBox()
+        msg.setWindowTitle("Saved to database")
+        msg.setText("your todo list has been saved")
+        x = msg.exec_()
+
+
+    def retranslateUi(self, form):
+        _translate = QtCore.QCoreApplication.translate
+        form.setWindowTitle(_translate("form", "to-dolist"))
+        self.label.setText(_translate("form", "Enter task:-"))
+        self.additem_pushButton.setText(_translate("form", "add item"))
+        self.deleteitem_pushButton_2.setText(_translate("form", "Delete item"))
+        self.clear_pushButton_3.setText(_translate("form", "clear list"))
+        self.save_pushButton.setText(_translate("form", "save "))
+    
+
+if __name__ == "__main__":
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    form = QtWidgets.QWidget()
+    ui = Ui_form()
+    ui.setupUi(form)
+    form.show()
+    sys.exit(app.exec_())
